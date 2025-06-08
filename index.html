@@ -1,0 +1,886 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Swarm Algorithm Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+        }
+        .nav-button.active {
+            color: #0d9488;
+            border-bottom: 2px solid #0d9488;
+            font-weight: 600;
+        }
+        .nav-button:not(.active):hover {
+            color: #0d9488;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .algorithm-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .algorithm-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .pseudocode {
+            background-color: #f1f5f9;
+            border-left: 4px solid #0d9488;
+            color: #334155;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .pseudo-keyword { color: #be123c; font-weight: bold; }
+        .pseudo-function { color: #1d4ed8; }
+        .pseudo-comment { color: #64748b; font-style: italic; }
+        .pseudo-variable { color: #059669; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 60vh;
+            max-height: 500px;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 50vh;
+                max-height: 400px;
+            }
+        }
+        #simulation-canvas {
+            margin: 0 auto;
+            display: block;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-800 mb-2">Interactive Swarm Algorithm Explorer</h1>
+            <p class="text-lg text-slate-600 max-w-3xl mx-auto">An interactive guide to the principles and applications of swarm intelligence algorithms for nanobot swarms.</p>
+        </header>
+
+        <nav class="flex justify-center border-b border-slate-200 mb-8">
+            <button class="nav-button active py-4 px-6 text-lg" data-target="introduction">Introduction</button>
+            <button class="nav-button py-4 px-6 text-lg" data-target="explorer">Algorithm Explorer</button>
+            <button class="nav-button py-4 px-6 text-lg" data-target="comparison">Comparative Analysis</button>
+        </nav>
+
+        <main>
+            <section id="introduction" class="content-section active">
+                <div class="bg-white p-8 rounded-lg shadow-md prose max-w-none">
+                    <h2 class="text-3xl font-bold mb-4 text-slate-700">The World of Nanobot Swarms</h2>
+                    <p>The field of nanorobotics, driven by the principles of swarm intelligence (SI), is revolutionizing how we approach complex problems in environments inaccessible to traditional robotics. Swarm intelligence describes the collective behavior that emerges from decentralized, self-organized systems. By mimicking natural swarms like ant colonies or fish schools, engineers are creating swarms of "palm-sized nanobots" that exhibit remarkable robustness, scalability, and fault tolerance.</p>
+                    <p>This application provides an overview of key swarm intelligence algorithms, detailing their principles, pseudocode, and specific considerations for their application in nanobot swarms. The core idea is that complex global behavior can emerge from simple, local interactions among individual agents without a central controller.</p>
+                    
+                    <h3 class="text-2xl font-semibold mt-8 mb-4 text-slate-700">Core Challenges in Miniaturization</h3>
+                    <p>Despite their promise, nanobot swarms face significant hurdles due to their minuscule scale:</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><strong>Power Constraints:</strong> Nanobots are too small for batteries, requiring energy to be scavenged from their environment (e.g., from vibrations or light).</li>
+                        <li><strong>Communication Limits:</strong> While essential for coordination, communication can be difficult. Too much communication can overload the system, leading to the "less is more" principle, where limited, local interactions are more effective.</li>
+                        <li><strong>Micro-scale Navigation:</strong> At the nano level, physics changes. Surface forces dominate, and random Brownian motion makes precise, controlled movement a major challenge.</li>
+                        <li><strong>Human Oversight:</strong> The autonomous and unpredictable nature of emergent behavior necessitates a human-in-the-loop framework to ensure safety and accountability, especially in critical applications.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="explorer" class="content-section">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-slate-800">Algorithm Explorer</h2>
+                    <p class="text-slate-600">Select an algorithm to view its detailed description, pseudocode, and analysis, or simulate its behavior.</p>
+                </div>
+                <div id="algorithm-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                </div>
+
+                <div id="algorithm-details" class="bg-white p-6 md:p-8 rounded-lg shadow-md min-h-[400px]">
+                </div>
+            </section>
+
+            <section id="comparison" class="content-section">
+                <div class="bg-white p-6 md:p-8 rounded-lg shadow-md">
+                    <h2 class="text-3xl font-bold text-center mb-2 text-slate-800">Comparative Analysis</h2>
+                    <p class="text-center text-slate-600 mb-8">This radar chart provides a visual comparison of the swarm algorithms across several key characteristics. Scores are on a scale of 1 (Low) to 5 (High). Hover over points for details.</p>
+                    <div class="chart-container">
+                        <canvas id="comparison-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const algorithmData = {
+            pso: {
+                name: "Particle Swarm Optimization (PSO)",
+                description: "A computational method where particles (robots) move through a search space. Each particle's movement is influenced by its own best-known position and the swarm's overall best-known position to find optimal solutions. It is often used for sensor placement and pathfinding.",
+                pseudocode: `
+<span class="pseudo-keyword">PROCEDURE</span> <span class="pseudo-function">ParticleSwarmOptimization</span>(f, S, MaxIterations, w, c1, c2)
+  <span class="pseudo-comment">// Initialize swarm particles with random positions and velocities</span>
+  <span class="pseudo-keyword">FOR EACH</span> particle i = 1 <span class="pseudo-keyword">TO</span> S <span class="pseudo-keyword">DO</span>
+    <span class="pseudo-variable">xi</span> = RandomPosition()
+    <span class="pseudo-variable">vi</span> = RandomVelocity()
+    <span class="pseudo-variable">pi_best</span> = <span class="pseudo-variable">xi</span>
+  <span class="pseudo-keyword">END FOR</span>
+  <span class="pseudo-variable">g_best</span> = FindBestInitialPosition()
+
+  <span class="pseudo-keyword">FOR</span> iteration = 1 <span class="pseudo-keyword">TO</span> MaxIterations <span class="pseudo-keyword">DO</span>
+    <span class="pseudo-keyword">FOR EACH</span> particle i = 1 <span class="pseudo-keyword">TO</span> S <span class="pseudo-keyword">DO</span>
+      <span class="pseudo-comment">// Update velocity and position</span>
+      <span class="pseudo-variable">vi</span> = w*<span class="pseudo-variable">vi</span> + c1*rand()*(<span class="pseudo-variable">pi_best</span>-<span class="pseudo-variable">xi</span>) + c2*rand()*(<span class="pseudo-variable">g_best</span>-<span class="pseudo-variable">xi</span>)
+      <span class="pseudo-variable">xi</span> = <span class="pseudo-variable">xi</span> + <span class="pseudo-variable">vi</span>
+      <span class="pseudo-comment">// Update personal and global bests</span>
+      <span class="pseudo-keyword">IF</span> f(<span class="pseudo-variable">xi</span>) < f(<span class="pseudo-variable">pi_best</span>) <span class="pseudo-keyword">THEN</span> <span class="pseudo-variable">pi_best</span> = <span class="pseudo-variable">xi</span>
+      <span class="pseudo-keyword">IF</span> f(<span class="pseudo-variable">xi</span>) < f(<span class="pseudo-variable">g_best</span>) <span class="pseudo-keyword">THEN</span> <span class="pseudo-variable">g_best</span> = <span class="pseudo-variable">xi</span>
+    <span class="pseudo-keyword">END FOR</span>
+  <span class="pseudo-keyword">END FOR</span>
+  <span class="pseudo-keyword">RETURN</span> <span class="pseudo-variable">g_best</span>
+<span class="pseudo-keyword">END PROCEDURE</span>`,
+                thoughts: "PSO offers efficient global search and is adaptable to dynamic environments. However, it can have high computational overhead for complex problems, is sensitive to getting stuck in local optima, and requires consistent communication to share the global best position, which is a challenge for nanobots."
+            },
+            aco: {
+                name: "Ant Colony Optimization (ACO)",
+                description: "Inspired by foraging ants, this technique uses 'artificial pheromones' to mark promising paths. Robots deposit these markers when they find something of interest, and other robots are attracted to stronger pheromone trails, leading the swarm to optimal solutions.",
+                pseudocode: `
+<span class="pseudo-keyword">PROCEDURE</span> <span class="pseudo-function">AntColonyOptimization</span>(Graph, NumAnts, MaxIterations)
+  <span class="pseudo-comment">// Initialize pheromone trails on all graph edges</span>
+  InitializePheromones()
+
+  <span class="pseudo-keyword">FOR</span> iteration = 1 <span class="pseudo-keyword">TO</span> MaxIterations <span class="pseudo-keyword">DO</span>
+    <span class="pseudo-keyword">FOR EACH</span> ant k = 1 <span class="pseudo-keyword">TO</span> NumAnts <span class="pseudo-keyword">DO</span>
+      <span class="pseudo-comment">// Ant constructs a path based on pheromone levels and heuristic info</span>
+      <span class="pseudo-variable">path_k</span> = BuildPath(k)
+    <span class="pseudo-keyword">END FOR</span>
+    <span class="pseudo-comment">// Update pheromones: evaporate old, deposit new</span>
+    EvaporatePheromones()
+    <span class="pseudo-keyword">FOR EACH</span> ant k = 1 <span class="pseudo-keyword">TO</span> NumAnts <span class="pseudo-keyword">DO</span>
+      DepositPheromones(<span class="pseudo-variable">path_k</span>)
+    <span class="pseudo-keyword">END FOR</span>
+  <span class="pseudo-keyword">END FOR</span>
+  <span class="pseudo-keyword">RETURN</span> BestPathFound
+<span class="pseudo-keyword">END PROCEDURE</span>`,
+                thoughts: "ACO is highly decentralized and robust to individual robot failure. Its emergent path discovery is excellent for unknown environments. The main challenge is creating and detecting 'artificial pheromones' at the nanoscale, and the algorithm can get stuck in suboptimal paths if not tuned correctly."
+            },
+            boids: {
+                name: "Boids Model",
+                description: "An artificial life model that simulates flocking behavior. Each 'boid' (robot) follows three simple rules: Separation (avoid crowding), Alignment (steer towards the average heading of neighbors), and Cohesion (steer towards the average position of neighbors).",
+                pseudocode: `
+<span class="pseudo-keyword">PROCEDURE</span> <span class="pseudo-function">BoidsSimulation</span>(Boids)
+  <span class="pseudo-keyword">LOOP</span>
+    <span class="pseudo-keyword">FOR EACH</span> boid <span class="pseudo-variable">b</span> <span class="pseudo-keyword">IN</span> Boids <span class="pseudo-keyword">DO</span>
+      <span class="pseudo-variable">v1</span> = <span class="pseudo-function">rule_Cohesion</span>(b)
+      <span class="pseudo-variable">v2</span> = <span class="pseudo-function">rule_Separation</span>(b)
+      <span class="pseudo-variable">v3</span> = <span class="pseudo-function">rule_Alignment</span>(b)
+      <span class="pseudo-variable">b.velocity</span> = <span class="pseudo-variable">b.velocity</span> + <span class="pseudo-variable">v1</span> + <span class="pseudo-variable">v2</span> + <span class="pseudo-variable">v3</span>
+      LimitVelocity(<span class="pseudo-variable">b.velocity</span>)
+      <span class="pseudo-variable">b.position</span> = <span class="pseudo-variable">b.position</span> + <span class="pseudo-variable">b.velocity</span>
+    <span class="pseudo-keyword">END FOR</span>
+  <span class="pseudo-keyword">END LOOP</span>
+<span class="pseudo-keyword">END PROCEDURE</span>`,
+                thoughts: "The Boids model is computationally cheap and creates natural-looking collective motion. It's great for maintaining swarm cohesion. However, it doesn't inherently solve complex tasks and requires additional logic for goal-oriented behavior. The emergent behavior is also highly sensitive to parameter tuning."
+            },
+            drl: {
+                name: "Deep Reinforcement Learning (DRL)",
+                description: "A machine learning technique where agents learn optimal policies through trial-and-error by interacting with an environment. Deep neural networks allow the agent to process complex sensor data and learn sophisticated behaviors to maximize a cumulative reward.",
+                pseudocode: `
+<span class="pseudo-keyword">PROCEDURE</span> <span class="pseudo-function">DRL_Training</span>(Agent, Environment, NumEpisodes)
+  Initialize <span class="pseudo-variable">Agent</span> with random network weights
+  Initialize <span class="pseudo-variable">ReplayBuffer</span>
+  <span class="pseudo-keyword">FOR</span> episode = 1 <span class="pseudo-keyword">TO</span> NumEpisodes <span class="pseudo-keyword">DO</span>
+    <span class="pseudo-variable">state</span> = Environment.reset()
+    <span class="pseudo-keyword">LOOP</span>
+      <span class="pseudo-comment">// Select action using an exploration/exploitation policy (e.g., epsilon-greedy)</span>
+      <span class="pseudo-variable">action</span> = Agent.select_action(<span class="pseudo-variable">state</span>)
+      <span class="pseudo-variable">next_state, reward, done</span> = Environment.step(<span class="pseudo-variable">action</span>)
+      Store (<span class="pseudo-variable">state, action, reward, next_state, done</span>) in <span class="pseudo-variable">ReplayBuffer</span>
+      <span class="pseudo-comment">// Sample minibatch and update network</span>
+      <span class="pseudo-variable">minibatch</span> = Sample(<span class="pseudo-variable">ReplayBuffer</span>)
+      Agent.update_network(<span class="pseudo-variable">minibatch</span>)
+      <span class="pseudo-variable">state</span> = <span class="pseudo-variable">next_state</span>
+      <span class="pseudo-keyword">IF</span> <span class="pseudo-variable">done</span> <span class="pseudo-keyword">THEN</span> <span class="pseudo-keyword">BREAK</span>
+    <span class="pseudo-keyword">END LOOP</span>
+  <span class="pseudo-keyword">END FOR</span>
+<span class="pseudo-keyword">END PROCEDURE</span>`,
+                thoughts: "DRL is highly adaptable and can make real-time decisions in complex environments. Policies can be trained offline and deployed as lightweight models on nanobots. However, it requires massive amounts of training data, transferring policies from simulation to the real world is difficult, and the learned policies can be hard to interpret ('black box' problem)."
+            },
+            gossip: {
+                name: "Gossip Algorithms",
+                description: "Also known as epidemic protocols, these algorithms spread information through a network like a rumor. Each robot periodically exchanges information with a random neighbor, allowing data to propagate and enabling the swarm to reach a global consensus from local interactions.",
+                pseudocode: `
+<span class="pseudo-keyword">PROCEDURE</span> <span class="pseudo-function">GossipAlgorithm</span>(Node <span class="pseudo-variable">vi</span>)
+  <span class="pseudo-comment">// Triggered periodically</span>
+  <span class="pseudo-keyword">UPON</span> timer(<span class="pseudo-variable">t_time_units</span>) at node <span class="pseudo-variable">vi</span> <span class="pseudo-keyword">DO</span>
+    <span class="pseudo-variable">p</span> = SelectRandomNeighbor()
+    <span class="pseudo-function">communicateWith</span>(<span class="pseudo-variable">p</span>, <span class="pseudo-variable">vi</span>)
+  <span class="pseudo-keyword">END UPON</span>
+
+  <span class="pseudo-comment">// Handle incoming communication</span>
+  <span class="pseudo-keyword">UPON</span> <span class="pseudo-function">communicateWith</span>(other_node <span class="pseudo-variable">vj</span>) <span class="pseudo-keyword">DO</span>
+    <span class="pseudo-comment">// Push-pull model: exchange information</span>
+    RECEIVE message <span class="pseudo-keyword">FROM</span> <span class="pseudo-variable">vj</span>
+    SEND message <span class="pseudo-keyword">TO</span> <span class="pseudo-variable">vj</span>
+    <span class="pseudo-comment">// Update local state based on received info</span>
+    UPDATE local_state
+  <span class="pseudo-keyword">END UPON</span>
+<span class="pseudo-keyword">END PROCEDURE</span>`,
+                thoughts: "Gossip algorithms are great for nanobots due to their low communication bandwidth needs and robustness to network failures. However, convergence can be slow in large swarms, and they are susceptible to the spread of noisy or unreliable information. Not suitable for time-critical data."
+            },
+            abc: {
+                name: "Artificial Bee Colony (ABC)",
+                description: "This algorithm mimics the foraging behavior of honey bees. It uses three types of bees: employed bees (exploiting known food sources), onlooker bees (choosing sources based on quality), and scout bees (searching for new sources). This balances exploration and exploitation to find optimal solutions.",
+                pseudocode: `
+<span class="pseudo-keyword">PROCEDURE</span> <span class="pseudo-function">ArtificialBeeColony</span>()
+  <span class="pseudo-comment">// Initialize food sources (solutions)</span>
+  InitializePopulation()
+  <span class="pseudo-keyword">LOOP</span>
+    <span class="pseudo-comment">// Employed bees exploit known sources</span>
+    <span class="pseudo-function">SendEmployedBees</span>()
+    <span class="pseudo-comment">// Onlooker bees select sources based on quality</span>
+    <span class="pseudo-function">SendOnlookerBees</span>()
+    <span class="pseudo-comment">// Scout bees search for new sources if old ones are abandoned</span>
+    <span class="pseudo-function">SendScoutBees</span>()
+    MemorizeBestSolution()
+  <span class="pseudo-keyword">END LOOP</span>
+<span class="pseudo-keyword">END PROCEDURE</span>`,
+                thoughts: "ABC is effective for multi-objective optimization and is robust against getting stuck in local optima. However, it can be computationally intensive for complex problems, and its performance is sensitive to careful parameter tuning."
+            },
+            fluxotaxis: {
+                name: "Fluxotaxis",
+                description: "A chemical plume tracing algorithm that guides robots by computing the gradient of chemical mass flux, not just concentration. This is theoretically guaranteed to lead to the true source of a chemical, avoiding false positives from transient pockets of high concentration.",
+                pseudocode: `
+<span class="pseudo-keyword">PROCEDURE</span> <span class="pseudo-function">FluxotaxisAlgorithm</span>(Robot <span class="pseudo-variable">r_i</span>)
+  <span class="pseudo-keyword">WHILE NOT</span> EmitterFound() <span class="pseudo-keyword">DO</span>
+    <span class="pseudo-variable">total_force</span> = 0
+    <span class="pseudo-comment">// Scan neighbors and gather concentration/velocity data</span>
+    <span class="pseudo-variable">neighbors</span> = ScanEnvironment()
+    <span class="pseudo-keyword">FOR EACH</span> <span class="pseudo-variable">neighbor_j</span> <span class="pseudo-keyword">IN</span> <span class="pseudo-variable">neighbors</span> <span class="pseudo-keyword">DO</span>
+      <span class="pseudo-variable">plume_force</span> = <span class="pseudo-function">CalculateMassFluxForce</span>(<span class="pseudo-variable">neighbor_j</span>)
+      <span class="pseudo-variable">formation_force</span> = <span class="pseudo-function">CalculateFormationForce</span>(<span class="pseudo-variable">neighbor_j</span>)
+      <span class="pseudo-variable">total_force</span> += <span class="pseudo-variable">plume_force</span> + <span class="pseudo-variable">formation_force</span>
+    <span class="pseudo-keyword">END FOR</span>
+    <span class="pseudo-comment">// Update robot's movement based on forces</span>
+    <span class="pseudo-variable">r_i.velocity</span> += <span class="pseudo-variable">total_force</span> * <span class="pseudo-variable">dt</span>
+    <span class="pseudo-variable">r_i.position</span> += <span class="pseudo-variable">r_i.velocity</span> * <span class="pseudo-variable">dt</span>
+  <span class="pseudo-keyword">END WHILE</span>
+<span class="pseudo-keyword">END PROCEDURE</span>`,
+                thoughts: "Fluxotaxis provides a very accurate and direct method for source localization in fluid environments. Its main challenge is the practical implementation: it requires precise measurements of chemical gradients and fluid velocity, which is extremely difficult at the nanoscale due to sensor limits and Brownian motion."
+            },
+            kernel: {
+                name: "Kernel DM+V",
+                description: "This algorithm models gas distribution as a density problem. It learns a statistical 2D map of a gas, including both the mean concentration and its variance. This allows the swarm to identify areas of high uncertainty and adaptively sample them to improve the map's accuracy.",
+                pseudocode: `
+<span class="pseudo-keyword">PROCEDURE</span> <span class="pseudo-function">KernelDMV</span>(Measurements, Grid)
+  <span class="pseudo-comment">// Step 1: Normalize sensor readings</span>
+  NormalizeReadings()
+  <span class="pseudo-comment">// Step 2: Compute temporary maps for weights and readings</span>
+  <span class="pseudo-keyword">FOR EACH</span> cell <span class="pseudo-variable">k</span> <span class="pseudo-keyword">IN</span> Grid <span class="pseudo-keyword">DO</span>
+    <span class="pseudo-variable">Omega_k</span> = CalculateIntegratedWeights(<span class="pseudo-variable">k</span>)
+    <span class="pseudo-variable">R_k</span> = CalculateWeightedReadings(<span class="pseudo-variable">k</span>)
+  <span class="pseudo-keyword">END FOR</span>
+  <span class="pseudo-comment">// Step 3 & 4: Calculate Confidence and Mean Concentration Maps</span>
+  <span class="pseudo-variable">ConfidenceMap</span> = CalculateConfidence(<span class="pseudo-variable">Omega_map</span>)
+  <span class="pseudo-variable">MeanMap</span> = CalculateMean(<span class="pseudo-variable">R_map</span>, <span class="pseudo-variable">ConfidenceMap</span>)
+  <span class="pseudo-comment">// Step 5: Calculate Variance Map</span>
+  <span class="pseudo-variable">VarianceMap</span> = CalculateVariance(<span class="pseudo-variable">MeanMap</span>)
+
+  <span class="pseudo-keyword">RETURN</span> <span class="pseudo-variable">MeanMap, VarianceMap, ConfidenceMap</span>
+<span class="pseudo-keyword">END PROCEDURE</span>`,
+                thoughts: "Kernel DM+V's ability to model uncertainty is a major advantage, enabling efficient, adaptive sampling. However, it requires accurate location data for each sensor reading, which is a major challenge for nanobots. It can also be computationally demanding for real-time mapping."
+            }
+        };
+
+        const comparisonData = {
+            labels: ['Decentralization', 'Robustness', 'Computational Cost (Lower is Better)', 'Adaptability', 'Communication Needs (Lower is Better)'],
+            datasets: [
+                { name: 'PSO', data: [4, 3, 3, 4, 2] },
+                { name: 'ACO', data: [5, 5, 3, 3, 3] },
+                { name: 'Boids', data: [5, 4, 5, 2, 5] },
+                { name: 'DRL', data: [4, 3, 1, 5, 3] },
+                { name: 'Gossip', data: [5, 5, 5, 4, 5] },
+                { name: 'ABC', data: [5, 4, 2, 4, 3] },
+                { name: 'Fluxotaxis', data: [4, 2, 2, 3, 2] },
+                { name: 'Kernel DM+V', data: [3, 3, 2, 5, 3] },
+            ]
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const navButtons = document.querySelectorAll('.nav-button');
+            const contentSections = document.querySelectorAll('.content-section');
+            const algorithmGrid = document.getElementById('algorithm-grid');
+            const algorithmDetails = document.getElementById('algorithm-details');
+            let comparisonChart = null;
+
+            function showTab(targetId) {
+                contentSections.forEach(section => {
+                    section.classList.toggle('active', section.id === targetId);
+                });
+                navButtons.forEach(button => {
+                    button.classList.toggle('active', button.dataset.target === targetId);
+                });
+
+                if (targetId === 'comparison' && !comparisonChart) {
+                    renderComparisonChart();
+                }
+            }
+
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    showTab(button.dataset.target);
+                });
+            });
+
+            function renderAlgorithmDetails(algoKey) {
+                const algo = algorithmData[algoKey];
+                if (!algo) {
+                    algorithmDetails.innerHTML = `<p class="text-center text-slate-500">Select an algorithm to see its details.</p>`;
+                    return;
+                }
+                algorithmDetails.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-4 text-slate-800">${algo.name}</h3>
+                    <p class="mb-6 text-slate-600">${algo.description}</p>
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-lg mb-2 text-slate-700">Pseudocode</h4>
+                        <div class="pseudocode p-4 rounded-md overflow-x-auto text-sm">
+                            <pre><code>${algo.pseudocode}</code></pre>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-lg mb-2 text-slate-700">Final Thoughts</h4>
+                        <p class="text-slate-600">${algo.thoughts}</p>
+                    </div>
+                `;
+            }
+
+            Object.keys(algorithmData).forEach(key => {
+                const algo = algorithmData[key];
+                const card = document.createElement('div');
+                card.className = 'algorithm-card bg-white p-4 rounded-lg shadow-md cursor-pointer border border-slate-200 text-center';
+                card.innerHTML = `
+                    <h3 class="font-semibold text-slate-700">${algo.name}</h3>
+                    <button class="simulate-btn mt-2 bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600" data-algo="${key}">Simulate</button>
+                `;
+                card.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('simulate-btn')) {
+                        renderAlgorithmDetails(key);
+                        const allCards = document.querySelectorAll('.algorithm-card');
+                        allCards.forEach(c => c.classList.remove('ring-2', 'ring-teal-500'));
+                        card.classList.add('ring-2', 'ring-teal-500');
+                    }
+                });
+                algorithmGrid.appendChild(card);
+            });
+
+            function renderComparisonChart() {
+                const ctx = document.getElementById('comparison-chart').getContext('2d');
+                const colors = ['#14b8a6', '#f97316', '#3b82f6', '#ec4899', '#8b5cf6', '#f59e0b', '#ef4444', '#10b981'];
+
+                const datasets = comparisonData.datasets.map((d, i) => ({
+                    label: d.name,
+                    data: d.data,
+                    fill: true,
+                    backgroundColor: `rgba(${parseInt(colors[i].slice(1,3),16)}, ${parseInt(colors[i].slice(3,5),16)}, ${parseInt(colors[i].slice(5,7),16)}, 0.2)`,
+                    borderColor: colors[i],
+                    pointBackgroundColor: colors[i],
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: colors[i]
+                }));
+
+                comparisonChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: comparisonData.labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: { color: '#cbd5e1' },
+                                grid: { color: '#e2e8f0' },
+                                pointLabels: {
+                                    font: { size: 12, weight: '500' },
+                                    color: '#475569'
+                                },
+                                ticks: {
+                                    beginAtZero: true,
+                                    min: 0,
+                                    max: 5,
+                                    stepSize: 1,
+                                    backdropColor: 'rgba(255, 255, 255, 0.75)',
+                                    color: '#64748b'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { position: 'top', labels: { font: { size: 12 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) label += ': ';
+                                        if (context.parsed.r !== null) label += context.parsed.r;
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Simulation Functions
+            function keepInBounds(bot) {
+                bot.pos.x = Math.max(0, Math.min(500, bot.pos.x));
+                bot.pos.y = Math.max(0, Math.min(500, bot.pos.y));
+            }
+
+            function distance(p1, p2) {
+                return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+            }
+
+            function simulatePSO(ctx, nanobots, target) {
+                const w = 0.7, c1 = 1.4, c2 = 1.4;
+                let g_best = nanobots[0].pos;
+                nanobots.forEach(bot => bot.p_best = { ...bot.pos });
+                let distances = [];
+
+                function step(iteration) {
+                    ctx.clearRect(0, 0, 500, 500);
+                    let avgDistance = 0;
+                    nanobots.forEach(bot => {
+                        let rand1 = Math.random(), rand2 = Math.random();
+                        bot.vel.x += w * bot.vel.x + c1 * rand1 * (bot.p_best.x - bot.pos.x) + c2 * rand2 * (g_best.x - bot.pos.x);
+                        bot.vel.y += w * bot.vel.y + c1 * rand1 * (bot.p_best.y - bot.pos.y) + c2 * rand2 * (g_best.y - bot.pos.y);
+                        bot.pos.x += bot.vel.x;
+                        bot.pos.y += bot.vel.y;
+                        keepInBounds(bot);
+
+                        if (distance(bot.pos, target) < distance(bot.p_best, target)) bot.p_best = { ...bot.pos };
+                        if (distance(bot.pos, target) < distance(g_best, target)) g_best = { ...bot.pos };
+
+                        ctx.beginPath();
+                        ctx.arc(bot.pos.x, bot.pos.y, 3, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#14b8a6';
+                        ctx.fill();
+                        avgDistance += distance(bot.pos, target);
+                    });
+                    avgDistance /= nanobots.length;
+                    distances.push(avgDistance);
+
+                    ctx.beginPath();
+                    ctx.arc(target.x, target.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(g_best.x, g_best.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#10b981';
+                    ctx.fill();
+
+                    if (iteration < 100 && avgDistance > 10) requestAnimationFrame(() => step(iteration + 1));
+                    else renderPSOChart(distances);
+                }
+
+                function renderPSOChart(distances) {
+                    const chartCanvas = document.createElement('canvas');
+                    chartCanvas.id = 'pso-convergence-chart';
+                    algorithmDetails.appendChild(chartCanvas);
+                    const chartCtx = chartCanvas.getContext('2d');
+                    new Chart(chartCtx, {
+                        type: 'line',
+                        data: {
+                            labels: Array.from({ length: distances.length }, (_, i) => i + 1),
+                            datasets: [{
+                                label: 'Average Distance to Target',
+                                data: distances,
+                                borderColor: '#14b8a6',
+                                backgroundColor: 'rgba(20, 184, 166, 0.2)',
+                                fill: true,
+                                tension: 0.3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: { title: { display: true, text: 'Iteration' } },
+                                y: { title: { display: true, text: 'Avg Distance (pixels)' }, beginAtZero: true }
+                            },
+                            plugins: {
+                                legend: { position: 'top' },
+                                title: { display: true, text: 'PSO Convergence Over Time' }
+                            }
+                        }
+                    });
+                }
+
+                requestAnimationFrame(() => step(0));
+            }
+
+            function simulateACO(ctx, grid, start, target) {
+                const pheromones = grid.map(row => row.map(() => 1));
+                function step(iteration) {
+                    ctx.clearRect(0, 0, 500, 500);
+                    grid.forEach((row, i) => row.forEach((cell, j) => {
+                        if (cell && i < 9) {
+                            ctx.beginPath();
+                            ctx.moveTo(i * 50, j * 50);
+                            ctx.lineTo((i + 1) * 50, j * 50);
+                            ctx.lineWidth = pheromones[i][j];
+                            ctx.strokeStyle = '#f97316';
+                            ctx.stroke();
+                        }
+                        if (cell && j < 9) {
+                            ctx.beginPath();
+                            ctx.moveTo(i * 50, j * 50);
+                            ctx.lineTo(i * 50, (j + 1) * 50);
+                            ctx.lineWidth = pheromones[i][j];
+                            ctx.strokeStyle = '#f97316';
+                            ctx.stroke();
+                        }
+                    }));
+
+                    let paths = [];
+                    for (let k = 0; k < 20; k++) {
+                        let path = buildPath(start, target, pheromones);
+                        paths.push(path);
+                        ctx.beginPath();
+                        ctx.arc(path[path.length - 1].x * 50, path[path.length - 1].y * 50, 3, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#14b8a6';
+                        ctx.fill();
+                    }
+
+                    pheromones.forEach((row, i) => row.forEach((cell, j) => pheromones[i][j] *= 0.9));
+                    paths.forEach(path => {
+                        let length = path.length;
+                        path.forEach((node, i) => {
+                            if (i < path.length - 1) pheromones[node.x][node.y] += 1 / length;
+                        });
+                    });
+
+                    if (iteration < 50) requestAnimationFrame(() => step(iteration + 1));
+                }
+
+                function buildPath(start, target, pheromones) {
+                    let path = [{ x: start.x, y: start.y }];
+                    let current = { ...start };
+                    while (current.x !== target.x || current.y !== target.y) {
+                        let next = chooseNextNode(current, pheromones);
+                        path.push(next);
+                        current = next;
+                        if (path.length > 100) break; // Prevent infinite loops
+                    }
+                    return path;
+                }
+
+                function chooseNextNode(current, pheromones) {
+                    let options = [];
+                    if (current.x < 9) options.push({ x: current.x + 1, y: current.y });
+                    if (current.y < 9) options.push({ x: current.x, y: current.y + 1 });
+                    if (options.length === 0) return current;
+                    let total = options.reduce((sum, opt) => sum + (pheromones[opt.x][opt.y] || 1), 0);
+                    let rand = Math.random() * total;
+                    let cumulative = 0;
+                    for (let opt of options) {
+                        cumulative += pheromones[opt.x][opt.y] || 1;
+                        if (rand <= cumulative) return opt;
+                    }
+                    return options[0];
+                }
+
+                requestAnimationFrame(() => step(0));
+            }
+
+            function simulateBoids(ctx, boids) {
+                function step() {
+                    ctx.clearRect(0, 0, 500, 500);
+                    boids.forEach(boid => {
+                        let v1 = cohesion(boid, boids);
+                        let v2 = separation(boid, boids);
+                        let v3 = alignment(boid, boids);
+                        boid.vel.x += v1.x + v2.x + v3.x;
+                        boid.vel.y += v1.y + v2.y + v3.y;
+                        let speed = Math.sqrt(boid.vel.x ** 2 + boid.vel.y ** 2);
+                        if (speed > 5) {
+                            boid.vel.x = (boid.vel.x / speed) * 5;
+                            boid.vel.y = (boid.vel.y / speed) * 5;
+                        }
+                        boid.pos.x += boid.vel.x;
+                        boid.pos.y += boid.vel.y;
+                        keepInBounds(boid);
+
+                        ctx.beginPath();
+                        ctx.arc(boid.pos.x, boid.pos.y, 3, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#3b82f6';
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.moveTo(boid.pos.x, boid.pos.y);
+                        ctx.lineTo(boid.pos.x + boid.vel.x * 5, boid.pos.y + boid.vel.y * 5);
+                        ctx.strokeStyle = '#3b82f6';
+                        ctx.stroke();
+                    });
+                    requestAnimationFrame(step);
+                }
+
+                function cohesion(boid, boids) {
+                    let center = { x: 0, y: 0 }, count = 0;
+                    boids.forEach(other => {
+                        if (distance(boid.pos, other.pos) < 50 && boid !== other) {
+                            center.x += other.pos.x;
+                            center.y += other.pos.y;
+                            count++;
+                        }
+                    });
+                    if (count > 0) {
+                        center.x /= count; center.y /= count;
+                        return { x: (center.x - boid.pos.x) * 0.01, y: (center.y - boid.pos.y) * 0.01 };
+                    }
+                    return { x: 0, y: 0 };
+                }
+
+                function separation(boid, boids) {
+                    let move = { x: 0, y: 0 };
+                    boids.forEach(other => {
+                        if (distance(boid.pos, other.pos) < 20 && boid !== other) {
+                            move.x -= (other.pos.x - boid.pos.x);
+                            move.y -= (other.pos.y - boid.pos.y);
+                        }
+                    });
+                    return { x: move.x * 0.05, y: move.y * 0.05 };
+                }
+
+                function alignment(boid, boids) {
+                    let avgVel = { x: 0, y: 0 }, count = 0;
+                    boids.forEach(other => {
+                        if (distance(boid.pos, other.pos) < 50 && boid !== other) {
+                            avgVel.x += other.vel.x;
+                            avgVel.y += other.vel.y;
+                            count++;
+                        }
+                    });
+                    if (count > 0) {
+                        avgVel.x /= count; avgVel.y /= count;
+                        return { x: (avgVel.x - boid.vel.x) * 0.01, y: (avgVel.y - boid.vel.y) * 0.01 };
+                    }
+                    return { x: 0, y: 0 };
+                }
+
+                requestAnimationFrame(step);
+            }
+
+            function simulateDRL(ctx, bot, target) {
+                function step(stepCount) {
+                    ctx.clearRect(0, 0, 500, 500);
+                    let action = Math.random() < 0.1 ? randomAction() : greedyAction(bot, target);
+                    bot.pos.x += action.x;
+                    bot.pos.y += action.y;
+                    keepInBounds(bot);
+
+                    ctx.beginPath();
+                    ctx.arc(bot.pos.x, bot.pos.y, 3, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#ec4899';
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(target.x, target.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fill();
+
+                    if (stepCount < 100 && distance(bot.pos, target) > 10) requestAnimationFrame(() => step(stepCount + 1));
+                }
+
+                function greedyAction(bot, target) {
+                    let dx = target.x - bot.pos.x, dy = target.y - bot.pos.y;
+                    let mag = Math.sqrt(dx ** 2 + dy ** 2);
+                    return mag > 0 ? { x: (dx / mag) * 2, y: (dy / mag) * 2 } : { x: 0, y: 0 };
+                }
+
+                function randomAction() {
+                    let angle = Math.random() * 2 * Math.PI;
+                    return { x: Math.cos(angle) * 2, y: Math.sin(angle) * 2 };
+                }
+
+                requestAnimationFrame(() => step(0));
+            }
+
+            function simulateGossip(ctx, bots) {
+                function step(iteration) {
+                    ctx.clearRect(0, 0, 500, 500);
+                    bots.forEach(bot => {
+                        if (Math.random() < 0.1) {
+                            let neighbor = bots[Math.floor(Math.random() * bots.length)];
+                            let avg = (bot.value + neighbor.value) / 2;
+                            bot.value = neighbor.value = avg;
+                        }
+                        ctx.beginPath();
+                        ctx.arc(bot.pos.x, bot.pos.y, 3, 0, 2 * Math.PI);
+                        ctx.fillStyle = `hsl(${bot.value * 2.4}, 100%, 50%)`;
+                        ctx.fill();
+                    });
+                    if (iteration < 100) setTimeout(() => requestAnimationFrame(() => step(iteration + 1)), 500);
+                }
+
+                requestAnimationFrame(() => step(0));
+            }
+
+            function simulateABC(ctx, bees, target) {
+                function step() {
+                    ctx.clearRect(0, 0, 500, 500);
+                    bees.forEach(bee => {
+                        if (bee.type === 'employed') {
+                            bee.pos.x += (target.x - bee.pos.x) * 0.05;
+                            bee.pos.y += (target.y - bee.pos.y) * 0.05;
+                        } else if (bee.type === 'onlooker') {
+                            if (Math.random() < 0.5) {
+                                bee.pos.x += (target.x - bee.pos.x) * 0.05;
+                                bee.pos.y += (target.y - bee.pos.y) * 0.05;
+                            }
+                        } else if (Math.random() < 0.1) {
+                            bee.pos.x = Math.random() * 500;
+                            bee.pos.y = Math.random() * 500;
+                        }
+                        keepInBounds(bee);
+                        ctx.beginPath();
+                        ctx.arc(bee.pos.x, bee.pos.y, 3, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#f59e0b';
+                        ctx.fill();
+                    });
+                    ctx.beginPath();
+                    ctx.arc(target.x, target.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fill();
+                    requestAnimationFrame(step);
+                }
+
+                requestAnimationFrame(step);
+            }
+
+            function simulateFluxotaxis(ctx, bots, source) {
+                function step() {
+                    ctx.clearRect(0, 0, 500, 500);
+                    bots.forEach(bot => {
+                        let flux = { x: (source.x - bot.pos.x) * 0.01, y: (source.y - bot.pos.y) * 0.01 };
+                        bot.vel.x += flux.x;
+                        bot.vel.y += flux.y;
+                        bot.pos.x += bot.vel.x;
+                        bot.pos.y += bot.vel.y;
+                        keepInBounds(bot);
+
+                        ctx.beginPath();
+                        ctx.arc(bot.pos.x, bot.pos.y, 3, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#ef4444';
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.moveTo(bot.pos.x, bot.pos.y);
+                        ctx.lineTo(bot.pos.x + flux.x * 50, bot.pos.y + flux.y * 50);
+                        ctx.strokeStyle = '#ef4444';
+                        ctx.stroke();
+                    });
+                    ctx.beginPath();
+                    ctx.arc(source.x, source.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#10b981';
+                    ctx.fill();
+                    requestAnimationFrame(step);
+                }
+
+                requestAnimationFrame(step);
+            }
+
+            function simulateKernelDMV(ctx, bots, grid) {
+                let meanMap = grid.map(row => row.map(() => 0));
+                let varianceMap = grid.map(row => row.map(() => 0));
+
+                function step() {
+                    ctx.clearRect(0, 0, 500, 500);
+                    grid.forEach((row, i) => row.forEach((cell, j) => {
+                        ctx.fillStyle = `hsl(240, 100%, ${100 - meanMap[i][j] * 50}%)`;
+                        ctx.fillRect(i * 50, j * 50, 50, 50);
+                    }));
+
+                    bots.forEach(bot => {
+                        let cellX = Math.floor(bot.pos.x / 50), cellY = Math.floor(bot.pos.y / 50);
+                        if (cellX >= 0 && cellX < 10 && cellY >= 0 && cellY < 10) {
+                            meanMap[cellX][cellY] += 0.1;
+                            varianceMap[cellX][cellY] += 0.05;
+                        }
+                        let target = findHighVariance(varianceMap);
+                        bot.pos.x += (target.x * 50 - bot.pos.x) * 0.05;
+                        bot.pos.y += (target.y * 50 - bot.pos.y) * 0.05;
+                        keepInBounds(bot);
+
+                        ctx.beginPath();
+                        ctx.arc(bot.pos.x, bot.pos.y, 3, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#10b981';
+                        ctx.fill();
+                    });
+                    requestAnimationFrame(step);
+                }
+
+                function findHighVariance(varianceMap) {
+                    let maxVar = 0, target = { x: 5, y: 5 };
+                    varianceMap.forEach((row, i) => row.forEach((val, j) => {
+                        if (val > maxVar) { maxVar = val; target = { x: i, y: j }; }
+                    }));
+                    return target;
+                }
+
+                requestAnimationFrame(step);
+            }
+
+            function initializeSimulation(algoKey) {
+                algorithmDetails.innerHTML = '<canvas id="simulation-canvas" width="500" height="500" style="display: block;"></canvas>';
+                const canvas = document.getElementById('simulation-canvas');
+                const ctx = canvas.getContext('2d');
+                const nanobots = Array.from({ length: 20 }, () => ({
+                    pos: { x: Math.random() * 500, y: Math.random() * 500 },
+                    vel: { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 },
+                    p_best: null,
+                    value: Math.random() * 100,
+                    type: Math.random() > 0.5 ? 'employed' : 'onlooker'
+                }));
+                const target = { x: 250, y: 250 };
+                const grid = Array(10).fill().map(() => Array(10).fill(1));
+
+                const simulations = {
+                    pso: () => simulatePSO(ctx, nanobots, target),
+                    aco: () => simulateACO(ctx, grid, { x: 0, y: 0 }, { x: 9, y: 9 }),
+                    boids: () => simulateBoids(ctx, nanobots),
+                    drl: () => simulateDRL(ctx, nanobots[0], target),
+                    gossip: () => simulateGossip(ctx, nanobots),
+                    abc: () => simulateABC(ctx, nanobots, target),
+                    fluxotaxis: () => simulateFluxotaxis(ctx, nanobots, target),
+                    kernel: () => simulateKernelDMV(ctx, nanobots, grid)
+                };
+
+                if (simulations[algoKey]) simulations[algoKey]();
+            }
+
+            algorithmGrid.addEventListener('click', (e) => {
+                if (e.target.classList.contains('simulate-btn')) {
+                    const algoKey = e.target.dataset.algo;
+                    initializeSimulation(algoKey);
+                }
+            });
+
+            renderAlgorithmDetails(null);
+            showTab('introduction');
+        });
+    </script>
+</body>
+</html>
